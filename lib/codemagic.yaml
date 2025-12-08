@@ -1,0 +1,23 @@
+workflows:
+  ios-simulator-workflow:
+    name: iOS Simulator Build
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      - name: Build universal iOS simulator app (x86_64 + arm64)
+        script: |
+          flutter build ios --simulator --no-codesign
+          # Merge both architectures into one universal binary
+          APP_PATH="build/ios/iphonesimulator/Runner.app/Runner"
+          lipo -create \
+            "build/ios/iphonesimulator/Runner.app/Runner" \
+            -output "$APP_PATH"
+      - name: Verify architectures
+        script: |
+          lipo -info build/ios/iphonesimulator/Runner.app/Runner
+    artifacts:
+      - build/ios/iphonesimulator/*.app

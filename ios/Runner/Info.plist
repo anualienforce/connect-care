@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>CFBundleDevelopmentRegion</key>
+		<string>$(DEVELOPMENT_LANGUAGE)</string>
+		<key>CFBundleDisplayName</key>
+		<string>Connect &amp; Care</string>
+		<key>CFBundleExecutable</key>
+		<string>$(EXECUTABLE_NAME)</string>
+		<key>CFBundleIdentifier</key>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+		<key>CFBundleInfoDictionaryVersion</key>
+		<string>6.0</string>
+		<key>CFBundleName</key>
+		<string>connect_care_app</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleShortVersionString</key>
+		<string>$(FLUTTER_BUILD_NAME)</string>
+		<key>CFBundleSignature</key>
+		<string>????</string>
+		<key>CFBundleVersion</key>
+		<string>$(FLUTTER_BUILD_NUMBER)</string>
+		<key>LSRequiresIPhoneOS</key>
+		<true/>
+		<key>UILaunchStoryboardName</key>
+		<string>LaunchScreen</string>
+		<key>UIMainStoryboardFile</key>
+		<string>Main</string>
+		<key>UISupportedInterfaceOrientations</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>UISupportedInterfaceOrientations~ipad</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationPortraitUpsideDown</string>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>CADisableMinimumFrameDurationOnPhone</key>
+		<true/>
+		<key>UIApplicationSupportsIndirectInputEvents</key>
+		<true/>
+		<!-- Permissions -->
+		<key>NSCameraUsageDescription</key>
+		<string>Connect Care needs access to your camera to take photos and videos for healthcare consultations.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Connect Care needs access to your microphone for voice calls and video consultations.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Connect Care needs access to your photo library to upload images for healthcare documentation.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>Connect Care needs access to save photos to your library.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Connect Care needs your location to find nearby healthcare providers and services.</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>Connect Care needs your location to provide location-based healthcare services.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>Connect Care needs your location to provide location-based healthcare services.</string>
+		<key>NSBluetoothAlwaysUsageDescription</key>
+		<string>Connect Care may use Bluetooth to connect with medical devices.</string>
+		<key>NSBluetoothPeripheralUsageDescription</key>
+		<string>Connect Care may use Bluetooth to connect with medical devices.</string>
+		<key>NSCalendarsUsageDescription</key>
+		<string>Connect Care needs access to your calendar to schedule appointments.</string>
+		<key>NSRemindersUsageDescription</key>
+		<string>Connect Care needs access to reminders for appointment notifications.</string>
+		<key>NSContactsUsageDescription</key>
+		<string>Connect Care needs access to contacts to share information with your healthcare providers.</string>
+		<key>NSMotionUsageDescription</key>
+		<string>Connect Care may use motion data for health tracking features.</string>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>Connect Care may use speech recognition for voice commands.</string>
+		<key>NSFaceIDUsageDescription</key>
+		<string>Connect Care uses Face ID for secure authentication.</string>
+		<!-- Allow loading HTTP content -->
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsArbitraryLoads</key>
+			<true/>
+			<key>NSAllowsArbitraryLoadsInWebContent</key>
+			<true/>
+		</dict>
+		<!-- Background modes -->
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>audio</string>
+			<string>fetch</string>
+			<string>remote-notification</string>
+		</array>
+		<key>UIStatusBarHidden</key>
+		<false/>
+	</dict>
+</plist>
