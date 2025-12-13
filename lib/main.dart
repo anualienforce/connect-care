@@ -2,11 +2,12 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,14 +27,30 @@ class ConnectCareApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Connect & Care',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
-      debugShowCheckedModeBanner: false,
-      home: const WebViewScreen(),
+    return ScreenUtilInit(
+      designSize: const Size(360, 690),
+      minTextAdapt: false,
+      splitScreenMode: true,
+      builder: (context, child) {
+        return MaterialApp(
+          title: 'Connect & Care',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+            useMaterial3: true,
+          ),
+          debugShowCheckedModeBanner: false,
+          builder: (context, widget) {
+            final mq = MediaQuery.of(context);
+            return MediaQuery(
+              data: mq.copyWith(
+                textScaleFactor: 1.0, // 🔒 ignore system font size
+              ),
+              child: widget!,
+            );
+          },
+          home: const WebViewScreen(),
+        );
+      },
     );
   }
 }
@@ -58,13 +75,68 @@ class _WebViewScreenState extends State<WebViewScreen> {
   @override
   void initState() {
     super.initState();
+    _checkAndRequestPermissions();
     _initializeWebView();
-    _checkConnectivity();
   }
 
-  Future<void> _requestPermissions() async {
-    // Request necessary permissions only when needed
-    await [Permission.storage, Permission.photos].request();
+  Future<void> _checkAndRequestPermissions() async {
+    debugPrint('🔐 Starting permission check...');
+    // Check and request all necessary permissions every time
+    final permissions = [
+      Permission.storage,
+      Permission.photos,
+      Permission.location,
+    ];
+
+    for (var permission in permissions) {
+      final status = await permission.status;
+      debugPrint('🔐 ${permission.toString()}: $status');
+      if (!status.isGranted) {
+        debugPrint('🔐 Requesting ${permission.toString()}...');
+        final result = await permission.request();
+        debugPrint('🔐 ${permission.toString()} after request: $result');
+      }
+    }
+    debugPrint('🔐 Permission check complete');
+  }
+
+  Future<void> _getAndInjectLocation() async {
+    try {
+      debugPrint('📍 Getting current location using geolocator...');
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+      );
+
+      debugPrint(
+        '📍 Got position: ${position.latitude}, ${position.longitude}',
+      );
+
+      // Inject the location into the JavaScript context
+      final locationJson =
+          '''{
+        "coords": {
+          "latitude": ${position.latitude},
+          "longitude": ${position.longitude},
+          "accuracy": ${position.accuracy},
+          "altitude": ${position.altitude},
+          "altitudeAccuracy": 0,
+          "heading": ${position.heading},
+          "speed": ${position.speed}
+        },
+        "timestamp": ${DateTime.now().millisecondsSinceEpoch}
+      }''';
+
+      await controller.runJavaScript('''
+        (function() {
+          window._flutterLocationData = $locationJson;
+          console.log("WebView: Injected location data:", window._flutterLocationData);
+        })();
+      ''');
+
+      debugPrint('📍 Location data injected into WebView');
+    } catch (e) {
+      debugPrint('❌ Error getting location: $e');
+    }
   }
 
   void _initializeWebView() {
@@ -83,6 +155,12 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
     controller = WebViewController.fromPlatformCreationParams(params)
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..addJavaScriptChannel(
+        'flutter',
+        onMessageReceived: (JavaScriptMessage message) {
+          debugPrint('📱 JavaScript Channel Message: ${message.message}');
+        },
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (int progress) {
@@ -95,21 +173,135 @@ class _WebViewScreenState extends State<WebViewScreen> {
               isLoading = true;
               hasError = false;
             });
+
+            // Check location permission and get/inject location if granted
+            debugPrint('📍 Page started, checking location permission...');
+            Permission.location.status.then((status) {
+              debugPrint('📍 Location permission status on page load: $status');
+              // If permission already granted, get the actual location and inject it
+              if (status.isGranted) {
+                debugPrint(
+                  '📍 Location permission granted, getting position...',
+                );
+                _getAndInjectLocation();
+              }
+            });
           },
           onPageFinished: (String url) {
             setState(() {
               isLoading = false;
               showSplash = false;
             });
+
+            // Inject viewport meta tag to disable text scaling
+            controller.runJavaScript(
+              'var meta = document.querySelector("meta[name=viewport]"); '
+              'if(!meta) { meta = document.createElement("meta"); meta.name = "viewport"; document.head.appendChild(meta); } '
+              'meta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"; '
+              'window.scrollX=0; window.scrollY=0; '
+              'document.body.style.display="block"; '
+              'document.documentElement.style.display="block"; '
+              'var css = "html, body { -webkit-text-size-adjust: 100% !important; font-size: 16px !important; } * { -webkit-text-size-adjust: 100% !important; }"; '
+              'var style = document.createElement("style"); '
+              'style.textContent = css; '
+              'document.head.appendChild(style);',
+            );
+
+            controller.runJavaScript('''
+    (function() {
+      if (!navigator.geolocation) {
+        console.log("WebView: geolocation NOT supported");
+        window.geolocationSupported = false;
+        return;
+      }
+      window.geolocationSupported = true;
+      console.log("WebView: geolocation supported");
+
+      const originalGetCurrentPosition =
+        navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+
+      navigator.geolocation.getCurrentPosition = function(success, error, options) {
+        console.log("WebView: getCurrentPosition CALLED with options:", JSON.stringify(options || {}));
+        
+        return originalGetCurrentPosition(
+          function(position) {
+            console.log("WebView: SUCCESS - Got position!", position.coords);
+            success(position);
           },
-          onWebResourceError: (WebResourceError error) {
-            setState(() {
-              hasError = true;
-              isLoading = false;
-              errorMessage = error.description;
+          function(err) {
+            console.error("WebView: ERROR -", err.code, err.message);
+            // If permission denied, try using injected Flutter location data
+            if (err.code === 1 && window._flutterLocationData) {
+              console.log("WebView: Permission denied in WebView, using Flutter location data...");
+              success(window._flutterLocationData);
+            } else {
+              error(err);
+            }
+          },
+          options
+        );
+      };
+    })();
+    
+    // Also log if geolocation.watchPosition is called
+    (function() {
+      if (!navigator.geolocation || !navigator.geolocation.watchPosition) {
+        return;
+      }
+      const originalWatchPosition =
+        navigator.geolocation.watchPosition.bind(navigator.geolocation);
+
+      navigator.geolocation.watchPosition = function(success, error, options) {
+        console.log("WebView: watchPosition CALLED");
+        if (window._flutterLocationData) {
+          console.log("WebView: Using Flutter location data for watchPosition...");
+          // Return a watch ID (positive integer)
+          success(window._flutterLocationData);
+          return 1;
+        }
+        return originalWatchPosition(success, error, options);
+      };
+    })();
+  ''');
+            ;
+            ;
+
+            // Allow document to load fully before showing
+            Future.delayed(const Duration(milliseconds: 500), () {
+              controller.runJavaScript(
+                'document.documentElement.style.opacity="1";',
+              );
             });
           },
+          onWebResourceError: (WebResourceError error) {
+            debugPrint(
+              '❌ WebResourceError: ${error.description}, url: ${error.url}',
+            );
+
+            // Only show error if it's a main frame error (actual page load)
+            // Ignore sub-resource errors like Google signaler, analytics, etc.
+            final isMainFrameError =
+                error.url == websiteUrl ||
+                (error.url?.contains('connect-care') ?? false);
+
+            if (isMainFrameError) {
+              setState(() {
+                hasError = true;
+                isLoading = false;
+                errorMessage = error.description;
+              });
+            } else {
+              debugPrint(
+                '⚠️ Ignoring non-critical sub-resource error: ${error.url}',
+              );
+            }
+          },
           onNavigationRequest: (NavigationRequest request) {
+            debugPrint(
+              '🔗 Navigation request: ${request.url}, isMainFrame: ${request.isMainFrame}',
+            );
+            // Allow all navigations (including Google auth) to load in WebView
+            // WebView will handle auth with proper headers
             return NavigationDecision.navigate;
           },
         ),
@@ -118,21 +310,67 @@ class _WebViewScreenState extends State<WebViewScreen> {
         'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) '
         'Chrome/91.0.4472.120 Mobile Safari/537.36',
       )
-      ..enableZoom(true);
+      ..enableZoom(false);
 
     // --- ANDROID SPECIFIC ---
     if (Platform.isAndroid) {
       final androidController = controller.platform as AndroidWebViewController;
 
       androidController
+        ..setTextZoom(100)
         ..setMediaPlaybackRequiresUserGesture(false)
         ..setGeolocationPermissionsPromptCallbacks(
           onShowPrompt: (request) async {
-            final permissionStatus = await Permission.location.request();
-            return GeolocationPermissionsResponse(
-              allow: permissionStatus.isGranted,
+            debugPrint('🌍🌍🌍 GEOLOCATION PROMPT TRIGGERED 🌍🌍🌍');
+            debugPrint('🌍 Geolocation permission requested by WebView');
+            debugPrint('📍 Request origin: ${request.origin}');
+            debugPrint('📍 Request resources: ${request.toString()}');
+
+            // Request location permission with explicit prompts
+            final locationStatus = await Permission.location.request();
+            debugPrint(
+              '📍 Location permission status after request: $locationStatus',
+            );
+            debugPrint('📍 Is location granted: ${locationStatus.isGranted}');
+            debugPrint('📍 Is location denied: ${locationStatus.isDenied}');
+            debugPrint(
+              '📍 Is location restricted: ${locationStatus.isRestricted}',
+            );
+            debugPrint(
+              '📍 Is location provisional: ${locationStatus.isProvisional}',
+            );
+
+            // Show error if permission is denied
+            if (locationStatus.isDenied || locationStatus.isRestricted) {
+              debugPrint('⚠️ Location permission denied or restricted');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      'Location permission is required. Please enable it in settings.',
+                    ),
+                    action: SnackBarAction(
+                      label: 'Settings',
+                      onPressed: () => openAppSettings(),
+                    ),
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
+              }
+            }
+
+            final response = GeolocationPermissionsResponse(
+              allow: locationStatus.isGranted,
               retain: true,
             );
+            debugPrint(
+              '📍 Geolocation response: allow=${response.allow}, retain=${response.retain}',
+            );
+
+            return response;
+          },
+          onHidePrompt: () {
+            debugPrint('📍 Geolocation prompt hidden');
           },
         )
         ..setOnShowFileSelector(_androidFilePicker)
@@ -145,8 +383,15 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
     // --- iOS SPECIFIC ---
     if (Platform.isIOS) {
-      (controller.platform as WebKitWebViewController)
-          .setAllowsBackForwardNavigationGestures(true);
+      final webKitController = controller.platform as WebKitWebViewController;
+      webKitController.setAllowsBackForwardNavigationGestures(true);
+
+      // Use Safari-compatible User-Agent
+      webKitController.setUserAgent(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+        'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 '
+        'Mobile/15E148 Safari/604.1',
+      );
     }
 
     controller.loadRequest(Uri.parse(websiteUrl));
@@ -160,12 +405,34 @@ class _WebViewScreenState extends State<WebViewScreen> {
     debugPrint('  acceptTypes: ${params.acceptTypes}');
     debugPrint('  filenameHint: ${params.filenameHint}');
 
-    // Request storage permission when file picker is opened
-    final storagePermission = await Permission.storage.request();
-    final photosPermission = await Permission.photos.request();
+    // Always check and request storage permission when file picker is opened
+    var storagePermission = await Permission.storage.status;
+    var photosPermission = await Permission.photos.status;
 
+    // If permissions are denied, request them again
+    if (!storagePermission.isGranted) {
+      storagePermission = await Permission.storage.request();
+    }
+    if (!photosPermission.isGranted) {
+      photosPermission = await Permission.photos.request();
+    }
+
+    // If still not granted after request, show message and open settings
     if (!storagePermission.isGranted && !photosPermission.isGranted) {
       debugPrint('⚠️ Storage/Photos permission denied');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Storage permission is required to upload files. Please enable it in settings.',
+            ),
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: () => openAppSettings(),
+            ),
+          ),
+        );
+      }
       return <String>[];
     }
 
@@ -205,20 +472,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
     }
 
     return uris;
-  }
-
-  Future<void> _checkConnectivity() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No internet connection'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _reloadPage() async {
@@ -295,7 +548,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 border: Border.all(color: Colors.blue, width: 3),
               ),
               child: ClipOval(
-                child: Image.asset('assets/icon.png', fit: BoxFit.cover),
+                child: Image.asset('assets/icon.jpeg', fit: BoxFit.cover),
               ),
             ),
             const SizedBox(height: 24),
@@ -322,8 +575,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Please check your internet connection and try again.',
+            Text(
+              'Please check your internet connection and try again. $errorMessage',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey),
             ),

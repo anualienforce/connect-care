@@ -46,36 +46,14 @@
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<!-- Permissions -->
-		<key>NSCameraUsageDescription</key>
-		<string>Connect Care needs access to your camera to take photos and videos for healthcare consultations.</string>
-		<key>NSMicrophoneUsageDescription</key>
-		<string>Connect Care needs access to your microphone for voice calls and video consultations.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>Connect Care needs access to your photo library to upload images for healthcare documentation.</string>
+		<string>Connect & Care needs access to your photo library to upload images for healthcare documentation.</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>
-		<string>Connect Care needs access to save photos to your library.</string>
+		<string>Connect & Care needs access to save photos to your library.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>Connect Care needs your location to find nearby healthcare providers and services.</string>
-		<key>NSLocationAlwaysUsageDescription</key>
-		<string>Connect Care needs your location to provide location-based healthcare services.</string>
+		<string>Connect & Care needs your location to find nearby healthcare providers and services.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>Connect Care needs your location to provide location-based healthcare services.</string>
-		<key>NSBluetoothAlwaysUsageDescription</key>
-		<string>Connect Care may use Bluetooth to connect with medical devices.</string>
-		<key>NSBluetoothPeripheralUsageDescription</key>
-		<string>Connect Care may use Bluetooth to connect with medical devices.</string>
-		<key>NSCalendarsUsageDescription</key>
-		<string>Connect Care needs access to your calendar to schedule appointments.</string>
-		<key>NSRemindersUsageDescription</key>
-		<string>Connect Care needs access to reminders for appointment notifications.</string>
-		<key>NSContactsUsageDescription</key>
-		<string>Connect Care needs access to contacts to share information with your healthcare providers.</string>
-		<key>NSMotionUsageDescription</key>
-		<string>Connect Care may use motion data for health tracking features.</string>
-		<key>NSSpeechRecognitionUsageDescription</key>
-		<string>Connect Care may use speech recognition for voice commands.</string>
-		<key>NSFaceIDUsageDescription</key>
-		<string>Connect Care uses Face ID for secure authentication.</string>
+		<string>Connect & Care needs your location to provide location-based healthcare services.</string>
 		<!-- Allow loading HTTP content -->
 		<key>NSAppTransportSecurity</key>
 		<dict>
@@ -84,14 +62,29 @@
 			<key>NSAllowsArbitraryLoadsInWebContent</key>
 			<true/>
 		</dict>
-		<!-- Background modes -->
-		<key>UIBackgroundModes</key>
-		<array>
-			<string>audio</string>
-			<string>fetch</string>
-			<string>remote-notification</string>
-		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!-- Prevent system text scaling -->
+		<key>UIPrerenderedIcon</key>
+		<false/>
+		<key>NSIgnorePercentageBasedScaling</key>
+		<true/>
+		<key>UIAccessibilityIsVoiceOverRunning</key>
+		<false/>
+		<key>UIAccessibilityBoldText</key>
+		<false/>
+		<key>UIAccessibilityLargerAccessibilityFonts</key>
+		<false/>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>connectcare</string>
+				</array>
+			</dict>
+		</array>
 	</dict>
 </plist>
