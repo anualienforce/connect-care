@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSCameraUsageDescription</key>
+   <string>Connect &amp; Care uses the camera to take photos for uploading documents and profile images.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -47,13 +49,11 @@
 	<key>NSIgnorePercentageBasedScaling</key>
 	<true/>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Connect &amp; Care needs your location to provide location-based healthcare services.</string>
+	<string>Connect &amp; Care needs your location to connect you with nearby community members who can offer practical help and to match nearby needs.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Connect &amp; Care needs your location to find nearby healthcare providers and services.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Connect &amp; Care needs access to save photos to your library.</string>
+	<string>Connect &amp; Care needs your location to connect you with nearby community members who can offer practical help and to match nearby needs.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Connect &amp; Care needs access to your photo library to upload images for healthcare documentation.</string>
+	<string>Connect &amp; Care needs access to your photo library to upload images for setting profile.</string>
 	<key>UIAccessibilityBoldText</key>
 	<false/>
 	<key>UIAccessibilityIsVoiceOverRunning</key>
