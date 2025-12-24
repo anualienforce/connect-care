@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>NSCameraUsageDescription</key>
-   <string>Connect &amp; Care uses the camera to take photos for uploading documents and profile images.</string>
+   <string>Connect &amp; Care uses the camera to take photos for uploading profile images.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
